@@ -1,0 +1,41 @@
+services:
+  api:
+    build: .
+    image: session-reconstruction:latest
+    environment:
+      DATA_DIR: /data
+      DB_PATH: /data/portal.db
+      WORK_DIR: /data/work
+      RUN_WORKER_IN_PROCESS: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - portal-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  worker:
+    image: session-reconstruction:latest
+    # Reuse the image built by the api service.
+    build:
+      context: .
+    pull_policy: never
+    command: ["python", "-m", "app.worker_main"]
+    environment:
+      DATA_DIR: /data
+      DB_PATH: /data/portal.db
+      WORK_DIR: /data/work
+    volumes:
+      - portal-data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  portal-data:

@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Local SQLite data (container data lives in the Docker volume)
+data/
+*.db
+*.db-wal
+*.db-shm
